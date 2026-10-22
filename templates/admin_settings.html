@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Réglages — DWAlbion builder{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>Réglages</h1>
+  <form method="post" action="/admin/workspaces/new" class="inline-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input name="name" placeholder="Nom du nouveau serveur">
+    <button class="btn btn-sm">+ Ajouter un serveur</button>
+  </form>
+</div>
+<p class="muted">Tu configures actuellement le serveur : <strong>{{ settings.name }}</strong>{% if workspaces and workspaces|length > 1 %} (change de serveur en haut à droite){% endif %}.</p>
+<form method="post" action="/admin/settings" class="form">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label class="full">Nom de ce serveur
+    <input name="ws_name" value="{{ settings.name }}" placeholder="ex: Guilde principale, Alliance...">
+  </label>
+  <label class="full">ID du serveur Discord
+    <input name="guild_id" value="{{ settings.guild_id }}" placeholder="ex: 123456789012345678">
+    <small class="muted">Active le Mode développeur Discord → clic droit sur le serveur → Copier l'identifiant.</small>
+  </label>
+  <label class="full">Salon Discord des calls
+    <input name="calls_channel_id" value="{{ settings.calls_channel_id }}" placeholder="ex: 123456789012345678">
+    <small class="muted">Clic droit sur le salon → Copier l'identifiant. Les calls créés sur le site y seront postés par le bot.</small>
+  </label>
+  <label class="full">Mention automatique sur les calls Discord
+    <input name="call_mention" value="{{ settings.call_mention }}" placeholder="@here  ou  <@&IDduRôle>">
+    <small class="muted">Ping ajouté au message quand un call est posté. Ex : <code>@here</code>, <code>@everyone</code>, ou l'ID d'un rôle sous la forme <code>&lt;@&amp;123456789&gt;</code> (laisse vide pour aucun ping).</small>
+  </label>
+  <label class="full">Salon Discord des activités (membres)
+    <input name="activities_channel_id" value="{{ settings.activities_channel_id }}" placeholder="ex: 123456789012345678">
+    <small class="muted">Salon séparé où sont postées les activités créées par les membres.</small>
+  </label>
+  <label class="full">Mention automatique sur les activités Discord
+    <input name="activity_mention" value="{{ settings.activity_mention }}" placeholder="@here  ou  <@&IDduRôle>">
+    <small class="muted">Ping ajouté au message quand une activité est postée (laisse vide pour aucun).</small>
+  </label>
+  <label class="full">Fuseau horaire de référence (commande /call)
+    <input name="timezone" value="{{ settings.timezone or 'America/Toronto' }}" placeholder="America/Toronto">
+    <small class="muted">Utilisé pour interpréter les heures tapées dans /call sur Discord (ex: Europe/Paris, America/Toronto). Sur le site, chaque personne voit déjà son propre fuseau.</small>
+  </label>
+
+  <fieldset><legend>Killboard (Albion Online)</legend>
+    <div class="gear-grid">
+      <label>Serveur / région
+        <select name="albion_region">
+          {% for r in ['Europe','Americas','Asia'] %}<option value="{{ r }}" {{ 'selected' if settings.albion_region == r else '' }}>{{ r }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Nom de la guilde
+        <input name="albion_guild_name" value="{{ settings.albion_guild_name }}" placeholder="PLS-DisMount">
+      </label>
+      <label>ID de la guilde (optionnel)
+        <input name="albion_guild_id" value="{{ settings.albion_guild_id }}" placeholder="ex: lk0pSHp0QrSk...">
+      </label>
+    </div>
+    <small class="muted">Entre le nom : je cherche l'ID automatiquement (si la guilde a de l'activité PvP). Sinon, colle directement l'ID de la guilde (trouvable sur un killboard externe ou dans le jeu).</small>
+    <button class="btn btn-sm" formnovalidate>💾 Enregistrer la guilde</button>
+  </fieldset>
+
+  <button class="btn btn-sm" formnovalidate>💾 Enregistrer l'ID (puis recharge pour voir les rôles)</button>
+
+  {% if roles %}
+  <fieldset><legend>Rôles → niveaux d'accès</legend>
+    <input type="hidden" name="roles_rendered" value="1">
+    <table class="table roles-table">
+      <thead><tr><th>Rôle</th><th>Membre</th><th>Caller</th><th>Admin</th></tr></thead>
+      <tbody>
+        {% for r in roles if r.name != '@everyone' %}
+        <tr>
+          <td><span class="role-chip">{{ r.name }}</span></td>
+          <td><input type="checkbox" name="member_roles" value="{{ r.id }}" {{ 'checked' if r.id|string in settings.member_role_ids|map('string')|list else '' }}></td>
+          <td><input type="checkbox" name="caller_roles" value="{{ r.id }}" {{ 'checked' if r.id|string in settings.caller_role_ids|map('string')|list else '' }}></td>
+          <td><input type="checkbox" name="admin_roles" value="{{ r.id }}" {{ 'checked' if r.id|string in settings.admin_role_ids|map('string')|list else '' }}></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted small">Astuce : si aucun rôle « Membre » n'est coché, tout membre du serveur est considéré comme membre.</p>
+    <button class="btn">💾 Enregistrer le mapping</button>
+  </fieldset>
+  {% elif settings.guild_id %}
+    <p class="muted">Impossible de lire les rôles : vérifie que le bot est bien dans ce serveur et que l'ID est correct.</p>
+  {% endif %}
+</form>
+{% endblock %}

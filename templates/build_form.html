@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Éditer' if build else 'Nouveau' }} build{% endblock %}
+{% block content %}
+<h1>{{ 'Éditer le build' if build else 'Nouveau build' }}</h1>
+<form method="post" action="{{ '/builds/%d/edit'|format(build.id) if build else '/builds/new' }}" class="form build-form">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <div class="gear-grid">
+    <label>Nom du build<input name="name" required value="{{ build.name if build else '' }}" placeholder="ex: Tank Heavy Mace"></label>
+    <label>Catégorie
+      <select name="category">
+        <option value="">— aucune —</option>
+        {% for key, lbl in build_categories %}
+          <option value="{{ key }}" {{ 'selected' if build and build.category == key else '' }}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+
+  {% if not is_guest %}
+  <label class="check"><input type="checkbox" name="public" value="1" {{ 'checked' if build and build.public else '' }}> 🌐 Public (visible depuis les autres serveurs reliés)</label>
+  {% endif %}
+
+  <fieldset><legend>Équipement — clique une case pour choisir un item</legend>
+    <div class="slot-grid">
+      {% set gear = [('weapon','Arme'),('offhand','Off-hand'),('head','Tête'),('chest','Torse'),('shoes','Bottes'),('cape','Cape'),('food','Food'),('potion','Potion')] %}
+      {% set swaps = build.swaps if build and build.swaps else {} %}
+      {% for key, lbl in gear %}
+      {% set val = build[key] if build else '' %}
+      {% set sval = swaps.get(key, '') %}
+      <div class="slot-wrap">
+        <div class="slot" data-cat="{{ key }}">
+          <div class="slot-ico"><img class="item-ico big"></div>
+          <div class="slot-label">{{ lbl }}</div>
+          <div class="slot-value muted small">{{ t_item(val) or '—' }}</div>
+          <input type="hidden" name="{{ key }}" value="{{ val }}">
+        </div>
+        {% if key in ['weapon','offhand','head','chest','shoes'] %}
+        <div class="slot swap-slot" data-cat="{{ key }}" title="Item de remplacement (swap)">
+          <div class="slot-ico"><img class="item-ico"></div>
+          <div class="slot-label">↔ swap</div>
+          <input type="hidden" name="swap_{{ key }}" value="{{ sval }}">
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset><legend>Sorts (optionnel)</legend>
+    <div class="gear-grid">
+      {% set sp = build.spells if build and build.spells else {} %}
+      <label>Q<input name="spell_q" value="{{ sp.get('q','') }}"></label>
+      <label>W<input name="spell_w" value="{{ sp.get('w','') }}"></label>
+      <label>E<input name="spell_e" value="{{ sp.get('e','') }}"></label>
+      <label>Passif<input name="spell_passive" value="{{ sp.get('passive','') }}"></label>
+      <label>Tête<input name="spell_head" value="{{ sp.get('head','') }}"></label>
+      <label>Torse<input name="spell_chest" value="{{ sp.get('chest','') }}"></label>
+      <label>Bottes<input name="spell_shoes" value="{{ sp.get('shoes','') }}"></label>
+    </div>
+  </fieldset>
+
+  <label class="full">Notes<textarea name="notes" rows="3">{{ build.notes if build else '' }}</textarea></label>
+  <button class="btn" type="submit">{{ 'Enregistrer les modifications' if build else 'Enregistrer le build' }}</button>
+</form>
+
+<div id="itemModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <input id="itemSearch" placeholder="Rechercher un item...">
+      <button type="button" id="itemClose" class="btn btn-sm">✕</button>
+    </div>
+    <div id="itemGrid" class="item-grid"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>setupItemPickers();</script>{% endblock %}

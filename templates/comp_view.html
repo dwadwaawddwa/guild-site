@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "_comp_display.html" as cd with context %}
+{% block title %}{{ comp.name }}{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>{{ comp.name }} <span class="tag">{{ comp.content_type }}</span></h1>
+  <div class="head-actions">
+    <a class="btn btn-sm btn-ghost" href="/compositions/{{ comp.id }}/image.png" target="_blank" rel="noopener">🖼️ Image</a>
+    <a class="btn btn-sm btn-ghost" href="/compositions/{{ comp.id }}/image.png?download=1">⬇️ PNG</a>
+    {% if can_edit(comp.created_by) %}<a class="btn btn-sm" href="/compositions/{{ comp.id }}">✏️ Éditer</a>{% endif %}
+  </div>
+</div>
+<p class="muted small">
+  {% if comp.official %}<span class="badge-official">✔ Officiel</span>{% else %}<span class="badge-unofficial">Non officiel</span>{% endif %}
+  {% if comp.created_by_name %} · créé par <strong>{{ comp.created_by_name }}</strong>{% endif %}
+</p>
+{% if comp.notes %}<p class="muted">{{ comp.notes }}</p>{% endif %}
+
+{{ cd.comp_display(groups) }}
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>hydrateItemIcons();</script>{% endblock %}

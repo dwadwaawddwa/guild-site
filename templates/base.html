@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="{{ lang }}" data-theme="dark" data-lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="{{ csrf }}">
+  <title>{% block title %}DWAlbion builder{% endblock %}</title>
+  <link rel="icon" type="image/png" href="https://render.albiononline.com/v1/item/T8_2H_ROCKSTAFF_KEEPER.png?quality=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="DWAlbion builder"><span class="dwa">DWA</span><span class="word">lbion</span><span class="sub">builder</span></a>
+  <nav>
+    {% if is_member %}
+      <a href="/dashboard">Accueil</a>
+      <a href="/calls">Calls</a>
+      <a href="/activities">Activités</a>
+      <a href="/compositions">Compos</a>
+      <a href="/builds">Builds</a>
+      <a href="/killboard">Killboard</a>
+      <a href="/profile">Profil</a>
+    {% elif user %}{# invite : builder seulement, pas de calls/activites #}
+      <a href="/dashboard">Accueil</a>
+      <a href="/compositions">Compos</a>
+      <a href="/builds">Builds</a>
+    {% endif %}
+    {% if is_admin %}<a href="/admin/settings">Réglages</a>{% endif %}
+  </nav>
+  <div class="user">
+    {% if workspaces and workspaces|length > 1 %}
+    <select class="ws-switch" title="Serveur actif" onchange="location.href='/ws/'+this.value">
+      {% for w in workspaces %}<option value="{{ w.id }}" {{ 'selected' if w.active else '' }}>{{ w.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <span class="lang-switch" title="Langue des noms d'équipement">
+      <a class="{{ 'on' if lang != 'en' else '' }}" href="/lang/fr">FR</a><a class="{{ 'on' if lang == 'en' else '' }}" href="/lang/en">EN</a>
+    </span>
+    {% if user %}
+      <span class="badge badge-{{ user.access_level }}">{{ 'invité' if is_guest else user.access_level }}</span>
+      <span class="uname">{{ user.name }}</span>
+      {% if user.guest %}
+      <a class="btn btn-sm btn-ghost" href="/auth/login" title="Tes builds et compos d'invité passent sur ton compte">Discord</a>
+      <a class="btn btn-sm" href="/logout" onclick="return confirm('En invité, tes builds et compos sont liés à ce navigateur : en te déconnectant tu n\'y auras plus accès. Continuer ?');">Déconnexion</a>
+      {% else %}
+      <a class="btn btn-sm" href="/logout">Déconnexion</a>
+      {% endif %}
+    {% else %}
+      <a class="btn" href="/auth/login">Se connecter avec Discord</a>
+    {% endif %}
+  </div>
+</header>
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+<footer class="foot"><span class="dwa">DWA</span>lbion builder — guild.dwa.gold</footer>
+<script>
+// affiche chaque horaire (data-utc = timestamp unix) dans le fuseau local du visiteur
+(function () {
+  var loc = document.documentElement.lang || "fr";
+  document.querySelectorAll("[data-utc]").forEach(function (el) {
+    var u = parseInt(el.dataset.utc, 10);
+    if (!u) { el.textContent = "—"; return; }
+    var d = new Date(u * 1000);
+    var opt = el.dataset.fmt === "date"
+      ? { weekday: "short", day: "2-digit", month: "short" }
+      : { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" };
+    el.textContent = d.toLocaleString(loc, opt);
+  });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

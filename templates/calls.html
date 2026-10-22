@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — DWAlbion builder{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>{{ page_title }}</h1>
+  {% if is_activity_page %}
+    {% if is_member %}<a class="btn" href="/activities/new">+ Nouvelle activité</a>{% endif %}
+  {% else %}
+    {% if is_caller %}<a class="btn" href="/calls/new">+ Nouveau call</a>{% endif %}
+  {% endif %}
+</div>
+{% if calls %}
+<table class="table">
+  <thead><tr><th>Titre</th><th>Type</th><th>Début</th><th>Fin</th><th>Statut</th><th>Inscrits</th></tr></thead>
+  <tbody>
+  {% for c in calls %}
+    <tr class="{{ 'row-done' if is_finished(c) else '' }}">
+      <td><a href="/calls/{{ c.id }}">{{ c.title }}</a></td>
+      <td><span class="tag">{{ c.type }}</span></td>
+      <td class="muted"><span data-utc="{{ to_unix(c.scheduled_at) }}"></span></td>
+      <td class="muted"><span data-utc="{{ to_unix(c.end_at) }}"></span></td>
+      <td>
+        {% if is_finished(c) %}<span class="status status-closed">Terminé</span>
+        {% else %}<span class="status status-{{ c.status }}">{{ 'ouvert' if c.status == 'open' else c.status }}</span>{% endif %}
+      </td>
+      <td>{{ c.signups|length }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">Rien pour le moment.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Builds — DWAlbion builder{% endblock %}
+{% macro build_card(b) %}
+  <a class="build-card" href="/builds/{{ b.id }}"
+     data-search="{{ (b.name ~ ' ' ~ b.weapon ~ ' ' ~ b.offhand ~ ' ' ~ b.head ~ ' ' ~ b.chest ~ ' ' ~ b.shoes ~ ' ' ~ b.cape ~ ' ' ~ b.food ~ ' ' ~ b.potion ~ ' ' ~ build_cat_label.get(b.category, ''))|lower }}">
+    <h3>{{ b.name }}{% if not b.official %} <span class="badge-unofficial">Non officiel</span>{% endif %}</h3>
+    <div class="items-row">
+      {% set sw = b.swaps or {} %}
+      {% for key, slot in [('weapon',b.weapon),('offhand',b.offhand),('head',b.head),('chest',b.chest),('shoes',b.shoes),('cape',b.cape),('food',b.food),('potion',b.potion)] %}
+        {% if slot %}<span class="ico-wrap"><img class="item-ico" data-item="{{ slot }}" alt="{{ t_item(slot) }}" title="{{ t_item(slot) }}">{% if sw.get(key) %}<img class="swap-corner sm" data-item="{{ sw.get(key) }}" title="Swap : {{ t_item(sw.get(key)) }}">{% endif %}</span>{% endif %}
+      {% endfor %}
+    </div>
+  </a>
+{% endmacro %}
+{% block content %}
+<div class="section-head">
+  <h1>Bibliothèque de builds</h1>
+  {% if user %}<a class="btn" href="/builds/new">+ Nouveau build</a>{% endif %}
+</div>
+<input id="pageSearch" class="db-search" placeholder="🔍 Rechercher un build (nom, arme, pièce d'équipement, catégorie)...">
+
+
+{% set ns = namespace(any=false) %}
+{% for key, lbl in build_categories %}
+  {% if groups[key] %}
+    {% set ns.any = true %}
+    <h2 class="cat-head">{{ lbl }} <span class="muted small">({{ groups[key]|length }})</span></h2>
+    <div class="build-grid">{% for b in groups[key] %}{{ build_card(b) }}{% endfor %}</div>
+  {% endif %}
+{% endfor %}
+{% if groups['_none'] %}
+  {% set ns.any = true %}
+  <h2 class="cat-head">Sans catégorie <span class="muted small">({{ groups['_none']|length }})</span></h2>
+  <div class="build-grid">{% for b in groups['_none'] %}{{ build_card(b) }}{% endfor %}</div>
+{% endif %}
+
+{% if not ns.any %}
+  <p class="muted">Aucun build. {% if user %}<a href="/builds/new">Crée le premier</a>.{% endif %}</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>hydrateItemIcons(); initPageSearch('pageSearch', '.build-card');</script>{% endblock %}

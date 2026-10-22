@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Accueil — DWAlbion builder{% endblock %}
+{% block content %}
+<h1>Bonjour {{ user.name }} 👋</h1>
+
+{% if is_guest %}
+{% if user.guest %}
+<p class="guest-note">Mode invité : tes builds et compos sont privés et liés à ce navigateur.
+  <a href="/auth/login">Connecte-toi avec Discord</a> pour les garder sur ton compte.</p>
+{% endif %}
+<div class="grid-2">
+  <section>
+    <div class="section-head">
+      <h2>Mes compositions</h2>
+      <a class="btn btn-sm" href="/compositions/new">+ Nouvelle compo</a>
+    </div>
+    {% if comps %}
+      <ul class="list">
+        {% for c in comps %}
+          <li><a href="/compositions/{{ c.id }}">{{ c.name }}</a>
+            <span class="tag">{{ c.content_type }}</span>
+            <span class="muted">{{ c.slots|length }} slots</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}<p class="muted">Aucune composition. Crée d'abord tes builds, puis assemble-les.</p>{% endif %}
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Mes builds</h2>
+      <a class="btn btn-sm" href="/builds/new">+ Nouveau build</a>
+    </div>
+    {% if builds %}
+      <ul class="list">
+        {% for b in builds %}
+          <li><a href="/builds/{{ b.id }}">{{ b.name }}</a>
+            {% if b.category %}<span class="tag tag-cat">{{ build_cat_label.get(b.category, b.category) }}</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}<p class="muted">Aucun build pour l'instant.</p>{% endif %}
+  </section>
+</div>
+{% else %}
+<div class="grid-2">
+  <section>
+    <div class="section-head">
+      <h2>Prochains calls</h2>
+      {% if is_caller %}<a class="btn btn-sm" href="/calls/new">+ Nouveau call</a>{% endif %}
+    </div>
+    {% if calls %}
+      <ul class="list">
+        {% for c in calls %}
+          <li>
+            <a href="/calls/{{ c.id }}">{{ c.title }}</a>
+            <span class="tag">{{ c.type }}</span>
+            {% if c.scheduled_at %}<span class="muted" data-utc="{{ to_unix(c.scheduled_at) }}"></span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}<p class="muted">Aucun call ouvert.</p>{% endif %}
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Compositions récentes</h2>
+      {% if is_member %}<a class="btn btn-sm" href="/compositions/new">+ Nouvelle compo</a>{% endif %}
+    </div>
+    {% if comps %}
+      <ul class="list">
+        {% for c in comps %}
+          <li><a href="/compositions/{{ c.id }}">{{ c.name }}</a>
+            <span class="tag">{{ c.content_type }}</span>
+            <span class="muted">{{ c.slots|length }} slots</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}<p class="muted">Aucune composition.</p>{% endif %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

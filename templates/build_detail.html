@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ build.name }}{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>{{ build.name }}
+    {% if build.category %}<span class="tag tag-cat">{{ build_cat_label.get(build.category, build.category) }}</span>{% endif %}
+  </h1>
+  <div class="head-actions">
+    <a class="btn btn-sm btn-ghost" href="/builds/{{ build.id }}/image.png" target="_blank" rel="noopener">🖼️ Image</a>
+    <a class="btn btn-sm btn-ghost" href="/builds/{{ build.id }}/image.png?download=1">⬇️ PNG</a>
+    {% if can_edit(build.created_by) %}
+    <a class="btn btn-sm" href="/builds/{{ build.id }}/edit">✏️ Éditer</a>
+    <form method="post" action="/builds/{{ build.id }}/delete" onsubmit="return confirm('Supprimer ce build ?');">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn btn-sm btn-danger">🗑️ Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+<p class="muted small">
+  {% if build.official %}<span class="badge-official">✔ Officiel</span>{% else %}<span class="badge-unofficial">Non officiel</span>{% endif %}
+  {% if build.created_by_name %} · créé par <strong>{{ build.created_by_name }}</strong>{% endif %}
+</p>
+
+<div class="detail-gear">
+  {% set gear = [('weapon','Arme'),('offhand','Off-hand'),('head','Tête'),('chest','Torse'),('shoes','Bottes'),('cape','Cape'),('food','Food'),('potion','Potion')] %}
+  {% for key, lbl in gear %}
+    {% set val = build[key] %}
+    {% set sw = (build.swaps or {}).get(key) %}
+    <div class="detail-slot">
+      <div class="slot-ico">
+        {% if val %}<img class="item-ico big" data-item="{{ val }}" title="{{ t_item(val) }}">{% endif %}
+        {% if sw %}<img class="swap-corner" data-item="{{ sw }}" title="Swap : {{ t_item(sw) }}">{% endif %}
+      </div>
+      <div class="slot-label">{{ lbl }}</div>
+      <div class="slot-value small">{{ t_item(val) or '—' }}</div>
+      {% if sw %}<div class="slot-value muted small">↔ {{ t_item(sw) }}</div>{% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+{% set sp = build.spells or {} %}
+{% if sp.values()|select|list %}
+<h2>Sorts</h2>
+<ul class="list">
+  {% for k, lbl in [('q','Q'),('w','W'),('e','E'),('passive','Passif'),('head','Tête'),('chest','Torse'),('shoes','Bottes')] %}
+    {% if sp.get(k) %}<li><strong>{{ lbl }}</strong> — {{ sp.get(k) }}</li>{% endif %}
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if build.notes %}<h2>Notes</h2><p>{{ build.notes }}</p>{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>hydrateItemIcons();</script>{% endblock %}

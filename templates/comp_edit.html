@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ comp.name if comp else 'Nouvelle compo' }}{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>{{ 'Éditer' if comp else 'Nouvelle' }} composition</h1>
+  <div class="head-actions">
+    {% if comp %}
+    <a class="btn btn-sm btn-ghost" href="/compositions/{{ comp.id }}/image.png" target="_blank" rel="noopener" title="Image de la dernière version enregistrée">🖼️ Image</a>
+    <a class="btn btn-sm btn-ghost" href="/compositions/{{ comp.id }}/image.png?download=1">⬇️ PNG</a>
+    <form method="post" action="/compositions/{{ comp.id }}/delete" onsubmit="return confirm('Supprimer cette composition ?');">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn btn-sm btn-danger" type="submit">🗑️ Supprimer</button>
+    </form>
+    {% endif %}
+    <button class="btn" id="saveComp">💾 Enregistrer</button>
+  </div>
+</div>
+
+<div class="form">
+  <div class="gear-grid">
+    <label>Nom de la compo<input id="compName" value="{{ comp.name if comp else '' }}" placeholder="ex: ZvZ 20 hommes"></label>
+    <label>Type
+      <input id="compType" list="calltypes" value="{{ comp.content_type if comp else 'Small scale' }}" placeholder="Small scale, ZvZ, PvE...">
+      <datalist id="calltypes">{% for t in call_types %}<option value="{{ t }}">{% endfor %}</datalist>
+    </label>
+  </div>
+  <label class="full">Notes<textarea id="compNotes" rows="2">{{ comp.notes if comp else '' }}</textarea></label>
+  {% if not is_guest %}
+  <label class="check"><input type="checkbox" id="compPublic" {{ 'checked' if comp and comp.public else '' }}> 🌐 Public (visible depuis les autres serveurs reliés)</label>
+  {% endif %}
+</div>
+
+<div class="section-head"><h2>Rôles / builds</h2><button class="btn btn-sm" id="addSlot">+ Ajouter un rôle</button></div>
+{# invite : pas de membres de guilde a assigner #}
+<div id="slotsContainer" data-members="{{ '0' if is_guest else '1' }}"></div>
+<p id="saveStatus" class="muted"></p>
+
+<!-- Modal de selection de build (images + noms) -->
+<div id="buildModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <input id="buildSearch" placeholder="Rechercher un build (nom ou arme)...">
+      <select id="buildCatFilter">
+        <option value="">Toutes catégories</option>
+        {% for key, lbl in build_categories %}<option value="{{ key }}">{{ lbl }}</option>{% endfor %}
+      </select>
+      <button type="button" id="buildClose" class="btn btn-sm">✕</button>
+    </div>
+    <div id="buildGrid" class="build-grid"></div>
+  </div>
+</div>
+
+<script id="catData" type="application/json">{{ build_categories|tojson }}</script>
+<script id="buildsData" type="application/json">{{ builds|tojson }}</script>
+<script id="compData" type="application/json">
+{% if comp %}{
+  "id": {{ comp.id }},
+  "slots": [{% for s in comp.slots %}{
+    "role_name": {{ (s.role_name or '')|tojson }},
+    "category": {{ (s.category or '')|tojson }},
+    "build_id": {{ s.build_id or 'null' }},
+    "assigned_user_id": {{ (s.assigned_user_id or '')|tojson }},
+    "assigned_username": {{ (s.assigned_username or '')|tojson }}
+  }{{ "," if not loop.last }}{% endfor %}]
+}{% else %}null{% endif %}
+</script>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>initCompEditor();</script>{% endblock %}

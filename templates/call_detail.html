@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ call.title }}{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>{{ call.title }} <span class="tag">{{ call.type }}</span></h1>
+  {% if is_caller or can_edit(call.created_by) %}
+  <div class="head-actions">
+    {% if is_caller and call.status == 'open' %}
+    <form method="post" action="/calls/{{ call.id }}/close">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn btn-sm">🔒 Clôturer</button>
+    </form>
+    {% endif %}
+    <form method="post" action="/calls/{{ call.id }}/delete" onsubmit="return confirm('Supprimer ce call ?');">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn btn-sm btn-danger">🗑️ Supprimer</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% if call.is_activity or call.created_by_name %}
+<p class="muted small">
+  {% if call.is_activity %}<span class="badge-unofficial">Activité (membre)</span>{% else %}<span class="badge-official">✔ Call officiel</span>{% endif %}
+  {% if call.created_by_name %} · organisé par <strong>{{ call.created_by_name }}</strong>{% endif %}
+</p>
+{% endif %}
+<p class="muted">
+  {% if call.scheduled_at %}🕒 <span data-utc="{{ to_unix(call.scheduled_at) }}"></span>{% if call.end_at %} → <span data-utc="{{ to_unix(call.end_at) }}"></span>{% endif %} · {% endif %}
+  Statut :
+  {% if is_finished(call) %}<span class="status status-closed">Terminé</span>
+  {% else %}<span class="status status-{{ call.status }}">{{ 'ouvert' if call.status == 'open' else call.status }}</span>{% endif %}
+</p>
+{% if call.description %}<p>{{ call.description }}</p>{% endif %}
+{% if call.composition %}<p>🧩 Composition : <a href="/compositions/{{ call.composition.id }}">{{ call.composition.name }}</a></p>{% endif %}
+
+{% if call.roster_final %}
+<div class="roster-banner">✅ <strong>Roster confirmé</strong> — la composition est définitive.
+{% if call.roster %}
+  <ul class="roster-final-list">
+    {% for r in call.roster %}<li><span class="rf-slot">{{ r.label }}</span> <span class="rf-arrow">→</span> <strong>{{ r.username }}</strong></li>{% endfor %}
+  </ul>
+{% endif %}
+</div>
+{% endif %}
+
+<h2>Choisis tes places <span class="muted small">(clique dans l'ordre de préférence — 1 = prioritaire)</span></h2>
+{% if call.status == 'open' and not call.roster_final %}
+  {% if options %}
+  <form method="post" action="/calls/{{ call.id }}/signup" id="signupForm">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="build_ids" id="chosenBuilds" value="">
+    {% for catlabel, opts in option_groups %}
+    <h3 class="cat-head">{{ catlabel }} <span class="muted small">({{ opts|length }})</span></h3>
+    <div class="pick-grid">
+      {% for opt in opts %}
+      <div class="pick-build" data-build-id="{{ opt.ref }}">
+        <div class="pick-card">
+          <div class="pick-order"></div>
+          {% if opt.spec %}<div class="spec-badge" title="Ta spécialisation totale sur cette ligne d'arme">{{ opt.spec }}</div>{% endif %}
+          <div class="pick-weapon"><img class="item-ico big" data-item="{{ opt.weapon }}" title="{{ t_item(opt.weapon) }}"></div>
+          <div class="pick-name">{{ opt.label }}</div>
+          <span class="items-row mini">
+            {% set sw = opt.swaps or {} %}
+            {% for key, it in [('weapon',opt.weapon),('offhand',opt.offhand),('head',opt.head),('chest',opt.chest),('shoes',opt.shoes),('cape',opt.cape),('food',opt.food),('potion',opt.potion)] %}
+              {% if it %}<span class="ico-wrap"><img class="item-ico" data-item="{{ it }}" title="{{ t_item(it) }}">{% if sw.get(key) %}<img class="swap-corner sm" data-item="{{ sw.get(key) }}" title="Swap : {{ t_item(sw.get(key)) }}">{% endif %}</span>{% endif %}
+            {% endfor %}
+          </span>
+          {% set picks = picks_by_ref.get(opt.ref, []) %}
+          {% if picks %}
+          <div class="pick-avatars">
+            {% for p in picks %}<img class="pick-av" src="{{ p.av }}" title="{{ p.name }} (P{{ p.prio }})" alt="">{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="inline-form">
+      <label>Disponibilité
+        <select name="status">
+          <option value="in">Présent</option>
+          <option value="tentative">Peut-être</option>
+          <option value="out">Absent</option>
+        </select>
+      </label>
+      <button class="btn" type="submit">Valider mes choix</button>
+    </div>
+  </form>
+  <script id="myChoices" type="application/json">{{ my_choice_refs|tojson }}</script>
+  {% else %}
+    <p class="muted">Aucune place disponible. {% if is_caller %}Lie une composition à ce call ou <a href="/builds/new">crée un build</a>.{% endif %}</p>
+  {% endif %}
+{% else %}<p class="muted">Inscriptions fermées.</p>{% endif %}
+
+{% if is_caller and roster %}
+<h2>🧭 Créateur de roster</h2>
+<div class="roster-filters">
+  <label>Pré-tri
+    <select id="rosterFilter">
+      <option value="fcfs">Premier arrivé, premier servi</option>
+      <option value="spec">Plus haute spécialisation</option>
+      <option value="fcfs_min">Premier arrivé avec spec minimum</option>
+    </select>
+  </label>
+  <label id="minWrap" style="display:none">Spec minimum
+    <input type="number" id="minSpec" value="100" min="0" step="10">
+  </label>
+  <span class="muted small">Clique un membre pour l'affecter à la place. Le 1<sup>er</sup> est présélectionné.</span>
+</div>
+<div id="rosterOut"></div>
+<form method="post" action="/calls/{{ call.id }}/roster" id="rosterConfirmForm" class="roster-confirm">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="roster" id="rosterPayload" value="">
+  <span class="muted small" id="rosterCount"></span>
+  <button class="btn" type="submit">{{ '🔁 Reconfirmer le roster' if call.roster_final else '✅ Confirmer le roster (définitif)' }}</button>
+</form>
+{% if call.roster_final %}
+<form method="post" action="/calls/{{ call.id }}/roster" class="roster-reset" onsubmit="return confirm('Rouvrir le roster (annuler le définitif) ?');">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="action" value="reset">
+  <button class="btn btn-sm btn-danger" type="submit">Rouvrir le roster</button>
+</form>
+{% endif %}
+<script id="rosterData" type="application/json">{{ roster|tojson }}</script>
+<script id="rosterChosen" type="application/json">{{ (call.roster or [])|tojson }}</script>
+{% endif %}
+
+<h2>Inscrits ({{ call.signups|length }})</h2>
+<table class="table">
+  <thead><tr><th>Membre</th><th>Builds choisis (ordre de priorité)</th><th>Dispo</th></tr></thead>
+  <tbody>
+    {% for s in call.signups %}
+    <tr>
+      <td><strong>{{ s.username }}</strong></td>
+      <td>
+        {% for ch in s.build_choices or [] %}
+          <span class="choice-chip"><span class="prio-badge">{{ loop.index }}</span>{{ ch.name }}</span>
+        {% else %}<span class="muted">—</span>{% endfor %}
+      </td>
+      <td><span class="status status-{{ s.status }}">{{ s.status }}</span></td>
+    </tr>
+    {% else %}<tr><td colspan="3" class="muted">Personne encore.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>hydrateItemIcons(); initBuildPicker(); initRoster();</script>{% endblock %}

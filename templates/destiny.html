@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Destiny Board — {{ user.name }}{% endblock %}
+{% macro col_block(group) %}
+  {% set gname = (group.label_en if lang == 'en' and group.label_en else group.label) %}
+  {% set gsearch = (group.label ~ ' ' ~ (group.label_en or ''))|lower %}
+  <div class="db-col">
+    <h4 class="db-col-title">{{ gname }}</h4>
+    {% for n in group.nodes %}
+    {% set disp = (n.label_en if lang == 'en' and n.label_en else n.label) %}
+    <div class="db-row" data-name="{{ (n.label ~ ' ' ~ (n.label_en or '') ~ ' ' ~ gsearch)|lower }}">
+      <img class="db-ico" loading="lazy" src="https://render.albiononline.com/v1/item/{{ n.icon }}.png?quality=1" alt="" title="{{ disp }}">
+      <span class="db-row-name">{{ disp }}</span>
+      <input class="db-lvl" type="number" min="0" max="100" name="s_{{ n.key }}"
+             value="{{ specs.get(n.key, '') }}" placeholder="0">
+    </div>
+    {% endfor %}
+  </div>
+{% endmacro %}
+{% block content %}
+<form method="post" action="/profile/destiny">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <div class="section-head">
+    <h1>🎯 Destiny Board</h1>
+    <button class="btn" type="submit">💾 Enregistrer</button>
+  </div>
+  <p class="muted">Entre ton niveau de maîtrise (0 à 100) pour chaque arme / armure que tu joues.</p>
+
+  <input id="dbSearch" class="db-search" placeholder="🔍 Rechercher une arme, une armure...">
+
+  {% for a in board.archetypes %}
+    <details class="arch" open>
+      <summary class="arch-head">{{ a.label }}</summary>
+
+      <h2 class="sub-head">Armes</h2>
+      <div class="db-cols">{% for g in a.weapons %}{{ col_block(g) }}{% endfor %}</div>
+
+      <h2 class="sub-head">Off-main</h2>
+      <div class="db-cols">{% for g in a.offhand %}{{ col_block(g) }}{% endfor %}</div>
+
+      <h2 class="sub-head">Armures</h2>
+      <div class="db-cols">{% for g in a.armor %}{{ col_block(g) }}{% endfor %}</div>
+    </details>
+  {% endfor %}
+
+  <div class="section-head"><span></span><button class="btn" type="submit">💾 Enregistrer</button></div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>initDestinySearch();</script>{% endblock %}

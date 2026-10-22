@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Compositions — DWAlbion builder{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>Compositions</h1>
+  {% if user %}<a class="btn" href="/compositions/new">+ Nouvelle compo</a>{% endif %}
+</div>
+{% if comps %}
+<input id="pageSearch" class="db-search" placeholder="🔍 Rechercher une composition...">
+<div class="comp-grid">
+  {% for c in comps %}
+  <a class="comp-card" href="/compositions/{{ c.id }}"
+     data-search="{{ (c.name ~ ' ' ~ ('zvz' if c.content_type == 'zvz' else 'small scale'))|lower }}">
+    <h3>{{ c.name }}{% if not c.official %} <span class="badge-unofficial">Non officiel</span>{% endif %}</h3>
+    <span class="tag">{{ c.content_type }}</span>
+    <span class="muted">{{ c.slots|length }} slots</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}<p class="muted">Aucune composition. {% if user %}<a href="/compositions/new">Crée la première</a>.{% endif %}</p>{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>initPageSearch('pageSearch', '.comp-card');</script>{% endblock %}

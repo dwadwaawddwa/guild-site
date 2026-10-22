@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Nouveau build{% endblock %}
+{% block content %}
+<h1>Nouveau build</h1>
+<form method="post" action="/builds/new" class="form build-form">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label class="full">Nom du build<input name="name" required placeholder="ex: Tank Heavy Mace"></label>
+
+  <fieldset><legend>Équipement — clique une case pour choisir un item</legend>
+    <div class="slot-grid">
+      {% for key, lbl in [('weapon','Arme'),('offhand','Off-hand'),('head','Tête'),('chest','Torse'),('shoes','Bottes'),('cape','Cape'),('food','Food'),('potion','Potion')] %}
+      <div class="slot" data-cat="{{ key }}">
+        <div class="slot-ico"><img class="item-ico big"></div>
+        <div class="slot-label">{{ lbl }}</div>
+        <div class="slot-value muted small">—</div>
+        <input type="hidden" name="{{ key }}" value="">
+      </div>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset><legend>Sorts (optionnel)</legend>
+    <div class="gear-grid">
+      <label>Q<input name="spell_q"></label>
+      <label>W<input name="spell_w"></label>
+      <label>E<input name="spell_e"></label>
+      <label>Passif<input name="spell_passive"></label>
+      <label>Tête<input name="spell_head"></label>
+      <label>Torse<input name="spell_chest"></label>
+      <label>Bottes<input name="spell_shoes"></label>
+    </div>
+  </fieldset>
+
+  <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
+  <button class="btn" type="submit">Enregistrer le build</button>
+</form>
+
+<!-- Modal de selection d'item -->
+<div id="itemModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <input id="itemSearch" placeholder="Rechercher un item...">
+      <button type="button" id="itemClose" class="btn btn-sm">✕</button>
+    </div>
+    <div id="itemGrid" class="item-grid"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js?v={{ asset_v }}"></script><script>setupItemPickers();</script>{% endblock %}

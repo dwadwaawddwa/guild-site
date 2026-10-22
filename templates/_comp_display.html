@@ -1,0 +1,31 @@
+{% macro slot_card(s) %}
+<div class="comp-slot-card">
+  <div class="csc-head">
+    <span class="csc-role">{{ s.role_name or '—' }}</span>
+    {% if s.build_name %}<span class="csc-build">{{ s.build_name }}</span>{% endif %}
+  </div>
+  <div class="items-row">
+    {% set sw = s.swaps or {} %}
+    {% for key, it in [('weapon',s.weapon),('offhand',s.offhand),('head',s.head),('chest',s.chest),('shoes',s.shoes),('cape',s.cape),('food',s.food),('potion',s.potion)] %}
+      {% if it %}
+        <span class="ico-wrap">
+          <img class="item-ico" data-item="{{ it }}" title="{{ t_item(it) }}">
+          {% if sw.get(key) %}<img class="swap-corner sm" data-item="{{ sw.get(key) }}" title="Swap : {{ t_item(sw.get(key)) }}">{% endif %}
+        </span>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% if s.assigned_username %}<div class="csc-user muted small">👤 {{ s.assigned_username }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro comp_display(groups) %}
+  {% for label, slots in groups %}
+    <h3 class="cat-head">{{ label }} <span class="muted small">({{ slots|length }})</span></h3>
+    <div class="comp-slots-grid">
+      {% for s in slots %}{{ slot_card(s) }}{% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Cette composition n'a pas encore de slots.</p>
+  {% endfor %}
+{% endmacro %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Profil — {{ user.name }}{% endblock %}
+{% block content %}
+<div class="profile-head">
+  {% if user.avatar %}
+    <img class="profile-av" src="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png?size=128" alt="">
+  {% endif %}
+  <div>
+    <h1>{{ user.name }}</h1>
+    <span class="badge badge-{{ user.access_level }}">{{ user.access_level }}</span>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <h3>🎯 Destiny Board</h3>
+    <p class="muted">{{ specs_count }} spécialisation(s) renseignée(s).</p>
+    <a class="btn" href="/profile/destiny">Ouvrir mon Destiny Board</a>
+  </div>
+</div>
+{% endblock %}

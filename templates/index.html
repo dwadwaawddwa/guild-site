@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1 class="hero-brand"><span class="dwa">DWA</span><span class="word">lbion</span><span class="sub">builder</span></h1>
+  <p>Builds, compositions et images de compo pour Albion Online — et pour la guilde : calls, activités et roster.</p>
+  {% if not user %}
+    <div class="hero-actions">
+      <a class="btn btn-lg" href="/auth/login">Se connecter avec Discord</a>
+      <form method="post" action="/auth/guest" class="guest-form">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input name="name" maxlength="24" placeholder="Pseudo (optionnel)" aria-label="Pseudo invité">
+        <button class="btn btn-lg btn-ghost" type="submit">Continuer en invité</button>
+      </form>
+    </div>
+    <p class="muted small">En invité : création de builds et de compositions + génération d'images, sans compte.
+      Les calls et activités sont réservés aux membres de la guilde.</p>
+    {% if not configured %}
+      <p class="muted">⚠️ Connexion Discord pas encore configurée par l'admin.</p>
+    {% endif %}
+  {% elif is_member %}
+    <a class="btn btn-lg" href="/dashboard">Entrer dans l'espace membre</a>
+  {% else %}
+    <a class="btn btn-lg" href="/dashboard">Ouvrir le builder</a>
+    {% if not user.guest %}<p class="muted small">Ton compte Discord n'a pas de rôle membre sur le serveur : tu as accès au builder (builds, compos, images).</p>{% endif %}
+  {% endif %}
+</section>
+<section class="cards">
+  <div class="card"><h3>🛡️ Builds</h3><p>Arme, armure, cape, food, potion, sorts et swaps.</p></div>
+  <div class="card"><h3>🧩 Compositions</h3><p>Rôles par catégorie, un build par slot.</p></div>
+  <div class="card"><h3>🖼️ Images</h3><p>Exporte une compo ou un build en image à partager.</p></div>
+  <div class="card"><h3>📣 Calls &amp; activités</h3><p>Membres de la guilde : inscriptions, roster et Discord.</p></div>
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Nouvelle activité' if is_activity else 'Nouveau call' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Nouvelle activité' if is_activity else 'Nouveau call' }}</h1>
+<form method="post" action="{{ '/activities/new' if is_activity else '/calls/new' }}" class="form" id="callForm">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="scheduled_at" id="startUtc">
+  <input type="hidden" name="end_at" id="endUtc">
+  <label>Titre<input name="title" required></label>
+  <label>Type
+    <input name="type" list="calltypes" value="Small scale" placeholder="Small scale, ZvZ, PvE...">
+    <datalist id="calltypes">{% for t in call_types %}<option value="{{ t }}">{% endfor %}</datalist>
+  </label>
+  <div class="gear-grid">
+    <label>Début (date &amp; heure)<input type="datetime-local" id="startLocal"></label>
+    <label>Fin (date &amp; heure)<input type="datetime-local" id="endLocal"></label>
+  </div>
+  <p class="muted small">Les horaires s'affichent automatiquement dans le fuseau de chaque personne (site &amp; Discord).</p>
+  <label>Composition liée
+    <select name="composition_id">
+      <option value="">— aucune —</option>
+      {% for c in comps %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Description<textarea name="description" rows="4"></textarea></label>
+  {% if post_workspaces %}
+  <fieldset><legend>Poster sur Discord</legend>
+    <p class="muted small">Chaque serveur avec un salon configuré est coché automatiquement. Décoche pour ne pas y poster.</p>
+    {% for w in post_workspaces %}
+    <label class="check{{ ' check-off' if not w.has_channel else '' }}">
+      <input type="checkbox" name="post_ws" value="{{ w.id }}" {{ 'checked' if w.has_channel else '' }} {{ 'disabled' if not w.has_channel else '' }}>
+      {{ w.name }}{{ ' (serveur actuel)' if w.active else '' }}
+      {% if not w.has_channel %}<span class="muted small">— aucun salon {{ 'd\'activités' if is_activity else 'de calls' }} configuré</span>{% endif %}
+    </label>
+    {% endfor %}
+  </fieldset>
+  {% endif %}
+  <button class="btn" type="submit">{{ 'Créer l\'activité' if is_activity else 'Créer le call' }}</button>
+</form>
+<script>
+// convertit l'heure locale saisie en UTC ISO avant l'envoi
+document.getElementById("callForm").addEventListener("submit", function () {
+  var s = document.getElementById("startLocal").value;
+  var e = document.getElementById("endLocal").value;
+  document.getElementById("startUtc").value = s ? new Date(s).toISOString() : "";
+  document.getElementById("endUtc").value = e ? new Date(e).toISOString() : "";
+});
+</script>
+{% endblock %}

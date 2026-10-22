@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Killboard — DWAlbion builder{% endblock %}
+{% block content %}
+<div class="section-head"><h1>🏆 Killboard</h1></div>
+
+{% if not guild_id %}
+  <div class="card">
+    <p class="muted">La guilde Albion n'est pas encore configurée.</p>
+    {% if is_admin %}
+    <p>Va dans <a href="/admin/settings">Réglages</a> pour définir la guilde et la région, ou entrer directement son ID.</p>
+    {% else %}<p>Un admin doit la configurer dans les réglages.</p>{% endif %}
+  </div>
+{% elif not kb %}
+  <p class="muted">Impossible de récupérer les données pour cette guilde (ID : <code>{{ guild_id }}</code>, région {{ region }}). Réessaie dans quelques minutes.</p>
+{% else %}
+  <div class="kb-totals">
+    <div class="kb-stat"><span class="kb-num">{{ '{:,}'.format(kb.total_kill_fame).replace(',', ' ') }}</span><span class="kb-lbl">Kill Fame (PvP)</span></div>
+    <div class="kb-stat"><span class="kb-num">{{ '{:,}'.format(kb.total_death_fame).replace(',', ' ') }}</span><span class="kb-lbl">Death Fame</span></div>
+    <div class="kb-stat"><span class="kb-num">{{ kb.ratio }}</span><span class="kb-lbl">Ratio K/D (fame)</span></div>
+    <div class="kb-stat"><span class="kb-num">{{ kb.member_count }}</span><span class="kb-lbl">Membres</span></div>
+  </div>
+
+  <div class="grid-2">
+    <section>
+      <h2>Classement des membres</h2>
+      <table class="table">
+        <thead><tr><th>#</th><th>Membre</th><th>Kill Fame</th><th>Death Fame</th><th>Ratio</th><th>IP moy.</th></tr></thead>
+        <tbody>
+          {% for m in kb.members[:50] %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><strong>{{ m.name }}</strong></td>
+            <td>{{ '{:,}'.format(m.kill_fame).replace(',', ' ') }}</td>
+            <td class="muted">{{ '{:,}'.format(m.death_fame).replace(',', ' ') }}</td>
+            <td>{{ '∞' if m.ratio is none else m.ratio }}</td>
+            <td class="muted">{{ m.ip or '—' }}</td>
+          </tr>
+          {% else %}<tr><td colspan="6" class="muted">Aucun membre.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Kills récents</h2>
+      <ul class="list kb-kills">
+        {% for k in kb.kills %}
+        <li>
+          <span class="kb-killer">{{ k.killer }}</span>
+          <span class="muted">a tué</span>
+          <span class="kb-victim">{{ k.victim }}</span>
+          {% if k.victim_guild %}<span class="muted small">[{{ k.victim_guild }}]</span>{% endif %}
+          <span class="kb-fame">+{{ '{:,}'.format(k.fame).replace(',', ' ') }}</span>
+        </li>
+        {% else %}<li class="muted">Aucun kill récent.</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+  <p class="muted small">Données : API officielle Albion Online ({{ region }}) · mises à jour toutes les ~10 min.</p>
+{% endif %}
+{% endblock %}
